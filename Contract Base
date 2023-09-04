@@ -1,0 +1,114 @@
+// SPDX-License-Identifier: MIT
+/// @title Credit Report Contract
+/// @author Your Name
+/// @notice This contract handles credit reports
+/// @dev This contract implements basic CRUD operations for a credit report
+///@custom:dev-run-script To run this script, use `truffle exec <script.js>`
+pragma solidity ^0.8.0;
+
+contract CreditReport {
+  
+    enum ContractState {
+        Initialized,
+        Active,
+        Inactive
+    }
+
+    ContractState public state;
+
+struct PersonalInfo {
+    string name;
+    string ssn;
+    int creditScore;
+    int interestRate;
+    string emailAddress;
+    int estimatedAssets;
+}
+
+struct AccountInfo {
+    string accountNumber;
+    string creditorName;
+    int accountType;
+    int openDate;
+    int closeDate;
+}
+
+struct PaymentInfo {
+    int highCreditLimit;
+    int currentBalance;
+    int paymentDueDate;
+    int paymentAmount;
+    int paymentStatus;
+}
+
+struct CreditInfo {
+    PersonalInfo personal;
+    AccountInfo account;
+    PaymentInfo payment;
+}
+
+    uint256 constant ACCOUNT_NUMBER_LENGTH = 16;
+    uint256 constant CREDITOR_NAME_LENGTH = 50;
+
+    mapping(address => CreditInfo) public creditInfo;
+    address public owner;
+
+    event CreditReportCreated(address indexed owner, CreditInfo creditInfo);
+
+    modifier validAccountNumber(string memory accountNumber) {
+        require(bytes(accountNumber).length == ACCOUNT_NUMBER_LENGTH, "Invalid account number length");
+        _;
+    }
+
+    modifier validCreditorName(string memory creditorName) {
+        require(bytes(creditorName).length <= CREDITOR_NAME_LENGTH, "Invalid creditor name length");
+        _;
+    }
+
+    modifier validAccountType(int accountType) {
+        require(accountType >= 1 && accountType <= 99, "Invalid account type");
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not the owner");
+        _;
+    }
+
+    modifier inState(ContractState _state) {
+        require(state == _state, "Invalid contract state for operation");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+        state = ContractState.Initialized;
+    }
+
+    function activateContract() public onlyOwner inState(ContractState.Initialized) {
+        state = ContractState.Active;
+    }
+
+    function deactivateContract() public onlyOwner inState(ContractState.Active) {
+        state = ContractState.Inactive;
+    }
+
+    function setCreditInfo(CreditInfo memory newCreditInfo) public onlyOwner inState(ContractState.Active) {
+        creditInfo[msg.sender] = newCreditInfo;
+        emit CreditReportCreated(msg.sender, newCreditInfo);
+    }
+
+    function setAccountNumber(string memory accountNumber) public validAccountNumber(accountNumber) {
+        creditInfo[msg.sender].account.accountNumber = accountNumber;
+    }
+
+    function setCreditorName(string memory creditorName) public validCreditorName(creditorName) {
+        creditInfo[msg.sender].account.creditorName = creditorName;
+    }
+
+    function setAccountType(int accountType) public validAccountType(accountType) {
+        creditInfo[msg.sender].account.accountType = accountType;
+    }
+
+    // You can add more functions to set other fields of the CreditInfo struct
+}
